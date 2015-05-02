@@ -6,17 +6,18 @@ This is an experiment to create a Python library to enable
 ## Obvious Test Cases
 
 ```python
+    >>> from pe import export
     >>> foo = 'abc/123-def.ghi'
     >>> # Bland Expansion
-    >>> pe('abc $foo abc')
+    >>> expand('abc $foo abc')
     'abc abc/123-def.ghi abc'
-    >>> pe('abc${foo}abc')
+    >>> expand('abc${foo}abc')
     'abcabc/123-def.ghiabc'
     >>>
     >>> # Default Value Expansion
-    >>> pe('-${foo:-bar}-')
+    >>> expand('-${foo:-bar}-')
     '-abc/123-def.ghi-'
-    >>> pe('-${bar:-bar}-')
+    >>> expand('-${bar:-bar}-')
     '-bar-'
 ```
 
@@ -24,9 +25,9 @@ This is an experiment to create a Python library to enable
 
 ```python
     >>> foo = 'abc/123-def.ghi'
-    >>> pe('abc $foo abc')
+    >>> expand('abc $foo abc')
     'abc abc/123-def.ghi abc'
-    >>> pe('abc${foo}abc')
+    >>> expand('abc${foo}abc')
     'abcabc/123-def.ghiabc'
 ```
 
