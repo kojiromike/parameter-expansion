@@ -19,10 +19,9 @@ completely reimplementing [POSIX pattern matching][2]
 [2]: http://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html#tag_02_13
 """
 
-from fnmatch import translate
+from fnmatch import fnmatchcase
 from itertools import takewhile
 from os import getenv
-from re import compile
 from shlex import shlex
 
 def expand(s, env=None):
@@ -31,6 +30,12 @@ def expand(s, env=None):
     if env is None:
         env = dict(os.environ)
     return ''.join(expand_tokens(s, env))
+
+class ParameterExpansionNullError(LookupError):
+    pass
+
+class ParameterExpansionParseError(Exception):
+    pass
 
 def expand_tokens(s, env):
     shl = shlex(s, posix=True)
@@ -52,20 +57,25 @@ def remove_affix(subst, shl, suffix=True):
     """
     http://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html#tag_02_13
     """
-    word = next(shl)
     max = False
-    if word == "%":
-        word = next(shl)
+    pat = ''.join(shl)
+    if pat[0] == ("%" if suffix else "#"):
         max = True
-    pat = ("" if suffix else "^") + \
-            translate(word).strip("\Z(?ms)") + \
-            ("$" if suffix else "")
-    re = compile(pat)
-    while True:
-        orig = subst
-        subst = re.sub('', subst, 1)
-        if (not max) or orig == subst:
-            return subst
+        pat = pat[1:]
+    size = len(subst)
+    indices = xrange(0, size)
+    if not (max and suffix):
+        indices = reversed(indices)
+    if suffix:
+        for i in indices:
+            if fnmatchcase(subst[i:], pat):
+                return subst[:i]
+        return subst
+    else:
+        for i in indices:
+            if fnmatchcase(subst[:i], pat):
+                return subst[i:]
+        return subst
 
 def remove_suffix(subst, shl):
     return remove_affix(subst, shl, True)
@@ -78,7 +88,7 @@ def follow_brace(shl, env):
     if param == "#":
         word = next(shl)
         subst = env.get(word, "")
-        return len(subst)
+        return str(len(subst))
     subst = env.get(param, "")
     param_set_and_not_null = bool(subst and (param in env))
     param_set_but_null = bool((param in env) and not subst)
@@ -126,7 +136,8 @@ def follow_brace(shl, env):
                 return subst # may be ""
             elif modifier == "?":
                 if param_unset:
-                    raise ParameterExpansionNullError(shl)
+                    msg = ''.join(shl) or "parameter '$parameter' not found"
+                    raise ParameterExpansionNullError(msg)
                 return subst # may be ""
             elif modifier == "+":
                 word = next(shl)

@@ -1,3 +1,5 @@
+import pe
+
 subst_test_cases = {
     # string,        set_and_not_null, set_but_null, unset
     "-$parameter-":         ("-set-",  "--",         "--",),
@@ -27,16 +29,20 @@ test_envs = (
     { "word": "word", }, # unset
 )
 
-from pe import expand
+test_case_map = ("Set and not null", "Set, but null", "Unset",)
 
 def test():
     for string, tc in subst_test_cases.iteritems():
         for i, env in enumerate(test_envs):
-            # from nose.tools import set_trace; set_trace()
-            result = expand(string, env), tc[i]
-            assert expand(string, env) == tc[i], result
+            env = dict(env) # Don't allow tests to mutate each other's envs
+            try:
+                result = string, pe.expand(string, env), tc[i], test_case_map[i]
+                assert result[1] == result[2], result
+            except pe.ParameterExpansionNullError:
+                assert tc[i] == "error", (string, tc[i], test_case_map[i])
 
     for string, tc in affix_test_cases.iteritems():
         env = {"parameter": tc[0],}
-        result = expand(string, env), tc
-        assert expand(string, env) == tc[1], result
+        from nose.tools import set_trace; set_trace()
+        result = string, pe.expand(string, env), tc
+        assert result[1] == tc[1], result
