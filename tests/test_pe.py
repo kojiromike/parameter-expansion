@@ -1,4 +1,4 @@
-test_cases = {
+subst_test_cases = {
     # string,        set_and_not_null, set_but_null, unset
     "-$parameter-":         ("-set-",  "--",         "--",),
     "-${parameter}-":       ("-set-",  "--",         "--",),
@@ -11,10 +11,14 @@ test_cases = {
     "-${parameter:+word}-": ("-word-", "--",         "--",),
     "-${parameter+word}-":  ("-word-", "-word-",     "--",),
     "-${#parameter}-":      ("-3-",    "-0-",        "-0-",),
-    "-${parameter%word}":   ("--",     "--",         "--",),
-    "-${parameter%%word}-": ("--",     "--",         "--",),
-    "-${parameter#word}-":  ("--",     "--",         "--",),
-    "-${parameter##word}-": ("--",     "--",         "--",),
+}
+
+affix_test_cases = {
+    # string,               parameter, result
+    "-${parameter%/*}-":  ("aa/bb/cc", "-aa/bb-",),
+    "-${parameter%%/*}-": ("aa/bb/cc", "-aa-",),
+    "-${parameter#*/}-":  ("aa/bb/cc", "-bb/cc-",),
+    "-${parameter##*/}-": ("aa/bb/cc", "-cc-",),
 }
 
 test_envs = (
@@ -26,8 +30,13 @@ test_envs = (
 from pe import expand
 
 def test():
-    for string, tc in test_cases.iteritems():
+    for string, tc in subst_test_cases.iteritems():
         for i, env in enumerate(test_envs):
-            from nose.tools import set_trace; set_trace()
+            # from nose.tools import set_trace; set_trace()
             result = expand(string, env), tc[i]
             assert expand(string, env) == tc[i], result
+
+    for string, tc in affix_test_cases.iteritems():
+        env = {"parameter": tc[0],}
+        result = expand(string, env), tc
+        assert expand(string, env) == tc[1], result

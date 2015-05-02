@@ -44,7 +44,8 @@ def expand_tokens(s, env):
 def follow_sigil(shl, env):
     param = next(shl)
     if param == "{":
-        return follow_brace(takewhile(lambda t: t != "}", shl), env)
+        consume = iter(list(takewhile(lambda t: t != "}", shl)))
+        return follow_brace(consume, env)
     return env.get(param, "")
 
 def remove_affix(subst, shl, suffix=True):
