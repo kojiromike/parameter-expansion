@@ -43,6 +43,5 @@ def test():
 
     for string, tc in affix_test_cases.iteritems():
         env = {"parameter": tc[0],}
-        from nose.tools import set_trace; set_trace()
         result = string, pe.expand(string, env), tc
         assert result[1] == tc[1], result

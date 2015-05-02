@@ -64,7 +64,7 @@ def remove_affix(subst, shl, suffix=True):
         pat = pat[1:]
     size = len(subst)
     indices = xrange(0, size)
-    if not (max and suffix):
+    if max != suffix:
         indices = reversed(indices)
     if suffix:
         for i in indices:
