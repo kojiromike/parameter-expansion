@@ -24,27 +24,33 @@ from itertools import takewhile
 from os import getenv
 from shlex import shlex
 
+
 def expand(s, env=None):
     """Expand the string using POSIX parameter expansion rules.
     Uses the provided environment dict or the actual environment."""
     if env is None:
         env = dict(os.environ)
-    return ''.join(expand_tokens(s, env))
+    return "".join(expand_tokens(s, env))
+
 
 class ParameterExpansionNullError(LookupError):
     pass
 
+
 class ParameterExpansionParseError(Exception):
     pass
+
 
 def expand_tokens(s, env):
     shl = shlex(s, posix=True)
     shl.commenters = ""
     while True:
-        # This apparently infinite loop should eventually
-        # raise StopIteration and thus exit.
-        yield ''.join(takewhile(lambda t: t != "$", shl))
-        yield follow_sigil(shl, env)
+        try:
+            yield "".join(takewhile(lambda t: t != "$", shl))
+            yield follow_sigil(shl, env)
+        except StopIteration:
+            return
+
 
 def follow_sigil(shl, env):
     param = next(shl)
@@ -53,17 +59,18 @@ def follow_sigil(shl, env):
         return follow_brace(consume, env)
     return env.get(param, "")
 
+
 def remove_affix(subst, shl, suffix=True):
     """
     http://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html#tag_02_13
     """
     max = False
-    pat = ''.join(shl)
+    pat = "".join(shl)
     if pat[0] == ("%" if suffix else "#"):
         max = True
         pat = pat[1:]
     size = len(subst)
-    indices = xrange(0, size)
+    indices = range(0, size)
     if max != suffix:
         indices = reversed(indices)
     if suffix:
@@ -77,11 +84,14 @@ def remove_affix(subst, shl, suffix=True):
                 return subst[i:]
         return subst
 
+
 def remove_suffix(subst, shl):
     return remove_affix(subst, shl, True)
 
+
 def remove_prefix(subst, shl):
     return remove_affix(subst, shl, False)
+
 
 def follow_brace(shl, env):
     param = next(shl)
@@ -119,7 +129,7 @@ def follow_brace(shl, env):
             elif modifier == "+":
                 if param_set_and_not_null:
                     return next(shl)
-                return subst # ""
+                return subst  # ""
             else:
                 raise ParameterExpansionParseError()
         else:
@@ -127,22 +137,22 @@ def follow_brace(shl, env):
                 word = next(shl)
                 if param_unset:
                     return word
-                return subst # may be ""
+                return subst  # may be ""
             elif modifier == "=":
                 word = next(shl)
                 if param_unset:
                     env[param] = word
                     return env[param]
-                return subst # may be ""
+                return subst  # may be ""
             elif modifier == "?":
                 if param_unset:
-                    msg = ''.join(shl) or "parameter '$parameter' not found"
+                    msg = "".join(shl) or "parameter '$parameter' not found"
                     raise ParameterExpansionNullError(msg)
-                return subst # may be ""
+                return subst  # may be ""
             elif modifier == "+":
                 word = next(shl)
                 if param_unset:
-                    return subst # ""
+                    return subst  # ""
                 return word
             raise ParameterExpansionParseError()
     except StopIteration:
