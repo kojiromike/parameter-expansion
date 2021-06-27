@@ -1,0 +1,65 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+    - Tests
+    branches:
+    - main
+    types:
+    - completed
+    - requested
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    # if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Set Up Git
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+
+    - name: GitHub Login
+      run: gh auth login --with-token <<< '${{ secrets.GITHUB_TOKEN }}'
+
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+
+    - run: pip install poetry poetry-dynamic-versioning
+
+    - name: Install Package
+      run: poetry install
+
+    - name: Bump Version
+      run: |
+        desc=$(git describe)
+        head=$(git show-ref --hash --head HEAD)
+        version=$(poetry version --short)
+        case "$version" in
+          0.0.0*)
+            echo 'Poetry failed to get version' >&2
+            false
+            ;;
+          "$desc")
+            echo 'Already on latest version' >&2
+            false
+            ;;
+        esac
+        IFS=. read -r major minor bugfix _ <<< "$version"
+        bump="$major.$minor.$(( 1 + bugfix ))"
+        set -x
+        gh release create --prerelease --target "$head" "$bump"
+        git fetch --tags origin
+        git tag -fm "$bump" "$bump"  # retag with annotated tag
+        git push --tags --force origin "$bump"
+        poetry version --short | grep -qF "$bump"
+        poetry build
+        gh release upload "$bump" dist/*

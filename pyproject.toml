@@ -1,17 +1,23 @@
 [tool.poetry]
 name = "parameter-expansion"
-version = "0.1.0"
+version = "0.0.0"  # provided by poetry-dynamic-versioning
 description = "POSIX parameter expansion in Python"
 authors = ["Michael A. Smith <michael@smith-li.com>"]
 readme = "README.md"
+
+[tool.poetry-dynamic-versioning]
+enable = true
+dirty = true
+pattern = '^(?P<base>\d+\.\d+\.\d+)(-?((?P<stage>[a-zA-Z]+)\.?(?P<revision>\d+)?))?(\+(?P<tagged_metadata>.+))?$'
 
 [tool.poetry.dependencies]
 python = ">=3.6,<4.0"
 
 [tool.poetry.dev-dependencies]
+poetry-dynamic-versioning = "^0.13.0"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.black]
