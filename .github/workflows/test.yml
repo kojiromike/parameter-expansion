@@ -1,0 +1,45 @@
+name: Tests
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Python ${{ matrix.python }} Tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        python:
+        - '3.9'
+        - '3.8'
+        - '3.7'
+        - '3.6'
+        - 'pypy-3.7'
+        - 'pypy-3.6'
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install Dependencies
+        run: pip install tox
+
+      - name: Lint
+        if: ${{ matrix.python == '3.9' }}
+        run: python3 -m tox -e lint
+
+      - name: Typechecks
+        if: ${{ matrix.python == '3.9' }}
+        run: python3 -m tox -e typechecks
+
+      - name: Test
+        run: python3 -m tox -e py
