@@ -9,7 +9,6 @@ on:
     - main
     types:
     - completed
-    - requested
 
 jobs:
   release:
@@ -56,7 +55,7 @@ jobs:
         IFS=. read -r major minor bugfix _ <<< "$version"
         bump="$major.$minor.$(( 1 + bugfix ))"
         set -x
-        gh release create --prerelease --target "$head" "$bump"
+        gh release create --target "$head" "$bump"
         git fetch --tags origin
         git tag -fm "$bump" "$bump"  # retag with annotated tag
         git push --tags --force origin "$bump"
