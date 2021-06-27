@@ -1,2 +1,4 @@
 *.swp
 *.py[co]
+.tox
+dist

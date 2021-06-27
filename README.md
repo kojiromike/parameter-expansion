@@ -6,7 +6,7 @@ This is an experiment to create a Python library to enable
 ## Obvious Test Cases
 
 ```python
-    >>> from pe import expand
+    >>> from parameter_expansion import expand
     >>> foo = 'abc/123-def.ghi'
     >>> # Bland Expansion
     >>> expand('abc $foo abc')

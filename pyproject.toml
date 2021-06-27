@@ -6,7 +6,7 @@ authors = ["Michael A. Smith <michael@smith-li.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">=3.6,<4.0"
 
 [tool.poetry.dev-dependencies]
 
@@ -15,8 +15,12 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.black]
-target-version = ['py36', 'py37', 'py38']
 include = '\.pyi?$'
 
 [tool.isort]
 profile = 'black'
+
+[tool.mypy]
+files = [
+    'parameter_expansion/*'
+]
