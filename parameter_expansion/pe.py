@@ -130,6 +130,25 @@ def follow_brace(shl, env):
                 if param_set_and_not_null:
                     return next(shl)
                 return subst  # ""
+            elif modifier.isdigit():
+                # this is a Substring Expansion as in ${foo:4:2}
+                # This is a bash'ism, and not POSIX.
+                # see https://www.gnu.org/software/bash/manual/html_node/Shell-Parameter-Expansion.html
+                try:
+                    start = int(modifier)
+                except ValueError as e:
+                    raise ParameterExpansionParseError("Not a bash slice", shl) from e
+                if param_set_and_not_null:
+                    subst = subst[start:]
+                # if this fails, we will StopIteration and we have a plain ${foo:4}
+                # and subst above will be returned
+                modifier = next(shl)
+                if modifier != ":":
+                    raise ParameterExpansionParseError("Illegal slice argument", shl)
+                end = int(next(shl))
+                if param_set_and_not_null:
+                    return subst[:end]
+                return subst
             else:
                 raise ParameterExpansionParseError()
         else:

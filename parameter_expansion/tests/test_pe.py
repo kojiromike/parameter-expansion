@@ -79,6 +79,22 @@ affix_test_cases = {
     ),
 }
 
+substring_test_cases = {
+    # string,               parameter, result
+    "-${parameter:0:2}-": (
+        "aa/bb/cc",
+        "-aa-",
+    ),
+    "-${parameter:3:2}-": (
+        "aa/bb/cc",
+        "-bb-",
+    ),
+    "-${parameter:6}-": (
+        "aa/bb/cc",
+        "-cc-",
+    ),
+}
+
 test_envs = (
     {
         "parameter": "set",
@@ -111,6 +127,13 @@ def test():
                 assert tc[i] == "error", (string, tc[i], test_case_map[i])
 
     for string, tc in affix_test_cases.items():
+        env = {
+            "parameter": tc[0],
+        }
+        result = string, pe.expand(string, env), tc
+        assert result[1] == tc[1], result
+
+    for string, tc in substring_test_cases.items():
         env = {
             "parameter": tc[0],
         }
