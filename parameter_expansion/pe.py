@@ -30,6 +30,7 @@ def expand(s, env=None):
     Uses the provided environment dict or the actual environment."""
     if env is None:
         env = dict(os.environ)
+    s = expand_simple(s, env)
     return "".join(expand_tokens(s, env))
 
 
@@ -58,6 +59,15 @@ def follow_sigil(shl, env):
         consume = iter(list(takewhile(lambda t: t != "}", shl)))
         return follow_brace(consume, env)
     return env.get(param, "")
+
+
+def expand_simple(s, env):
+    """Expand the string for simple $-prefixed variable (no curly braces).
+    Uses the provided environment dict.
+    """
+    for name, value in env.items():
+        s = s.replace(f"${name}", value)
+    return s
 
 
 def remove_affix(subst, shl, suffix=True):

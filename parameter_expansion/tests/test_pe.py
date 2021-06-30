@@ -115,6 +115,18 @@ replace_test_cases = {
     ),
 }
 
+simple_test_cases = {
+    # string,               env, result
+    "-${parameter/$aa/$bb}-": (
+        dict(parameter="FOO/bb/cc", aa="FOO", bb="BAR",),
+        "-BAR/bb/cc-",
+    ),
+    "-$parameter/$aa/$bb-": (
+        dict(parameter="aa/bb/cc", aa="FOO", bb="BAR",),
+        "-aa/bb/cc/FOO/BAR-",
+    ),
+}
+
 test_envs = (
     {
         "parameter": "set",
@@ -161,3 +173,8 @@ def test_replace():
     for string, (parameter, expected) in replace_test_cases.items():
         env = {"parameter": parameter}
         assert pe.expand(string, env) == expected, (string, parameter)
+
+
+def test_simple():
+    for string, (env, expected) in simple_test_cases.items():
+        assert pe.expand(string, env) == expected, (string, env)
