@@ -12,8 +12,8 @@ Also support some minimal Bash extensions to expansion [3]:
 
 (Pull requests to remove limitations are welcome.)
 
-- Only simple nested expansions are supported such as in `${foo:-$bar}` or
-`${foo:-${bar}}` but not complex expansions such as in `${foo:-${bar:-$baz}}`
+- Only simple nested expansions of the forms $variable and ${variable} are
+supported and not complex expansions such as in `${foo:-${bar:-$baz}}`
 - Only ASCII alphanumeric characters and underscores are supported in parameter
 names. (Per POSIX, parameter names may not begin with a numeral.)
 - Assignment expansions do not mutate the real environment.
@@ -69,9 +69,11 @@ def follow_sigil(shl, env):
 
 
 def expand_simple(s, env):
-    """Expand the string for simple plain variable as in $param or ${param}
-    replacement (without any extra nested expansion).
+    """Expand a string containing shell variable substitutions.
+    This expands the forms $variable and ${variable} only.
+    Non-existent variables are left unchanged.
     Uses the provided environment dict.
+    Similar to ``os.path.expandvars``.
     """
     for name, value in env.items():
         s = s.replace(f"${name}", value)
