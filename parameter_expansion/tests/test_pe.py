@@ -118,11 +118,19 @@ replace_test_cases = {
 simple_test_cases = {
     # string,               env, result
     "-${parameter/$aa/$bb}-": (
-        dict(parameter="FOO/bb/cc", aa="FOO", bb="BAR",),
+        dict(
+            parameter="FOO/bb/cc",
+            aa="FOO",
+            bb="BAR",
+        ),
         "-BAR/bb/cc-",
     ),
     "-$parameter/$aa/$bb-": (
-        dict(parameter="aa/bb/cc", aa="FOO", bb="BAR",),
+        dict(
+            parameter="aa/bb/cc",
+            aa="FOO",
+            bb="BAR",
+        ),
         "-aa/bb/cc/FOO/BAR-",
     ),
 }
