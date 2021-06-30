@@ -19,9 +19,9 @@ completely reimplementing [POSIX pattern matching][2]
 [2]: http://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html#tag_02_13
 """
 
+import os
 from fnmatch import fnmatchcase
 from itertools import takewhile
-from os import getenv
 from shlex import shlex
 
 
