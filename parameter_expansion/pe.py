@@ -151,6 +151,32 @@ def follow_brace(shl, env):
                 return subst
             else:
                 raise ParameterExpansionParseError()
+        elif modifier == "/":
+            # this is a string replacement
+            arg1 = next(shl)
+            replace_all = False
+            if arg1 == "/":
+                # with // replace all occurences
+                replace_all = True
+                arg1 = next(shl)
+
+            sep = next(shl)
+            if sep != "/":
+                raise ParameterExpansionParseError("Illegal replacement syntax")
+
+            # the repl of a replacement may be empty
+            try:
+                arg2 = next(shl)
+            except StopIteration:
+                arg2 = ""
+
+            if param_set_and_not_null:
+                if replace_all:
+                    return subst.replace(arg1, arg2)
+                else:
+                    return subst.replace(arg1, arg2, 1)
+
+            return subst
         else:
             if modifier == "-":
                 word = next(shl)

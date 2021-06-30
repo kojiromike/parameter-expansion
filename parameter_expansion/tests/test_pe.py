@@ -95,6 +95,26 @@ substring_test_cases = {
     ),
 }
 
+replace_test_cases = {
+    # string,               parameter, result
+    "-${parameter/aa/bb}-": (
+        "aa/bb/cc",
+        "-bb/bb/cc-",
+    ),
+    "-${parameter/aa/}-": (
+        "aa/bb/cc",
+        "-/bb/cc-",
+    ),
+    "-${parameter/aa/zz}-": (
+        "aa/bb/aa",
+        "-zz/bb/aa-",
+    ),
+    "-${parameter//aa/zz}-": (
+        "aa/bb/aa",
+        "-zz/bb/zz-",
+    ),
+}
+
 test_envs = (
     {
         "parameter": "set",
@@ -126,16 +146,18 @@ def test():
             except pe.ParameterExpansionNullError:
                 assert tc[i] == "error", (string, tc[i], test_case_map[i])
 
-    for string, tc in affix_test_cases.items():
-        env = {
-            "parameter": tc[0],
-        }
-        result = string, pe.expand(string, env), tc
-        assert result[1] == tc[1], result
+    for string, (parameter, expected) in affix_test_cases.items():
+        env = {"parameter": parameter}
+        assert pe.expand(string, env) == expected
 
-    for string, tc in substring_test_cases.items():
-        env = {
-            "parameter": tc[0],
-        }
-        result = string, pe.expand(string, env), tc
-        assert result[1] == tc[1], result
+
+def test_substring():
+    for string, (parameter, expected) in substring_test_cases.items():
+        env = {"parameter": parameter}
+        assert pe.expand(string, env) == expected, (string, parameter)
+
+
+def test_replace():
+    for string, (parameter, expected) in replace_test_cases.items():
+        env = {"parameter": parameter}
+        assert pe.expand(string, env) == expected, (string, parameter)
