@@ -133,6 +133,22 @@ simple_test_cases = {
         ),
         "-aa/bb/cc/FOO/BAR-",
     ),
+    "-${parameter/${aa}/${bb}}-": (
+        dict(
+            parameter="FOO/bb/cc",
+            aa="FOO",
+            bb="BAR",
+        ),
+        "-BAR/bb/cc-",
+    ),
+    "-$parameter/$aa/${bb}-": (
+        dict(
+            parameter="aa/bb/cc",
+            aa="FOO",
+            bb="BAR",
+        ),
+        "-aa/bb/cc/FOO/BAR-",
+    ),
 }
 
 test_envs = (

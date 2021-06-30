@@ -3,11 +3,17 @@
 """
 Given a string, expand that string using POSIX [parameter expansion][1].
 
+Also support some minimal Bash extensions to expansion [3]:
+- pattern substitution with `${foo/bar/baz}` (but only plain strings and not patterns)
+- substring expansion with `${foo:4:2}
+
+
 ## Limitations
 
 (Pull requests to remove limitations are welcome.)
 
-- Nested expansions `${foo:-$bar}` are not supported.
+- Only simple nested expansions are supported such as in `${foo:-$bar}` or
+`${foo:-${bar}}` but not complex expansions such as in `${foo:-${bar:-$baz}}`
 - Only ASCII alphanumeric characters and underscores are supported in parameter
 names. (Per POSIX, parameter names may not begin with a numeral.)
 - Assignment expansions do not mutate the real environment.
@@ -17,6 +23,7 @@ completely reimplementing [POSIX pattern matching][2]
 
 [1]: http://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html#tag_02_06_02
 [2]: http://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html#tag_02_13
+[3]: https://www.gnu.org/software/bash/manual/html_node/Shell-Parameter-Expansion.html
 """
 
 import os
@@ -62,10 +69,13 @@ def follow_sigil(shl, env):
 
 
 def expand_simple(s, env):
-    """Expand the string for simple $-prefixed variable (no curly braces).
+    """Expand the string for simple plain variable as in $param or ${param}
+    replacement (without any extra nested expansion).
     Uses the provided environment dict.
     """
     for name, value in env.items():
+        s = s.replace(f"${name}", value)
+        name = "{" + name + "}"
         s = s.replace(f"${name}", value)
     return s
 
