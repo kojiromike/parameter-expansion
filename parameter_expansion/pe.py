@@ -111,7 +111,6 @@ def follow_brace(shl, env):
         return str(len(subst))
     subst = env.get(param, "")
     param_set_and_not_null = bool(subst and (param in env))
-    param_set_but_null = bool((param in env) and not subst)
     param_unset = param not in env
     try:
         modifier = next(shl)
