@@ -79,6 +79,86 @@ affix_test_cases = {
     ),
 }
 
+substring_test_cases = {
+    # string,               parameter, result
+    "-${parameter:0:2}-": (
+        "aa/bb/cc",
+        "-aa-",
+    ),
+    "-${parameter:3:2}-": (
+        "aa/bb/cc",
+        "-bb-",
+    ),
+    "-${parameter:6}-": (
+        "aa/bb/cc",
+        "-cc-",
+    ),
+}
+
+replace_test_cases = {
+    # string,               parameter, result
+    "-${parameter/aa/bb}-": (
+        "aa/bb/cc",
+        "-bb/bb/cc-",
+    ),
+    "-${parameter/aa/}-": (
+        "aa/bb/cc",
+        "-/bb/cc-",
+    ),
+    "-${parameter/aa/zz}-": (
+        "aa/bb/aa",
+        "-zz/bb/aa-",
+    ),
+    "-${parameter//aa/zz}-": (
+        "aa/bb/aa",
+        "-zz/bb/zz-",
+    ),
+    "-${parameter/aa}-": (
+        "aa/bb/aa",
+        "-/bb/aa-",
+    ),
+    "-${parameter//aa}-": (
+        "aa/bb/aa",
+        "-/bb/-",
+    ),
+}
+
+simple_test_cases = {
+    # string,               env, result
+    "-${parameter/$aa/$bb}-": (
+        dict(
+            parameter="FOO/bb/cc",
+            aa="FOO",
+            bb="BAR",
+        ),
+        "-BAR/bb/cc-",
+    ),
+    "-$parameter/$aa/$bb-": (
+        dict(
+            parameter="aa/bb/cc",
+            aa="FOO",
+            bb="BAR",
+        ),
+        "-aa/bb/cc/FOO/BAR-",
+    ),
+    "-${parameter/${aa}/${bb}}-": (
+        dict(
+            parameter="FOO/bb/cc",
+            aa="FOO",
+            bb="BAR",
+        ),
+        "-BAR/bb/cc-",
+    ),
+    "-$parameter/$aa/${bb}-": (
+        dict(
+            parameter="aa/bb/cc",
+            aa="FOO",
+            bb="BAR",
+        ),
+        "-aa/bb/cc/FOO/BAR-",
+    ),
+}
+
 test_envs = (
     {
         "parameter": "set",
@@ -110,9 +190,23 @@ def test():
             except pe.ParameterExpansionNullError:
                 assert tc[i] == "error", (string, tc[i], test_case_map[i])
 
-    for string, tc in affix_test_cases.items():
-        env = {
-            "parameter": tc[0],
-        }
-        result = string, pe.expand(string, env), tc
-        assert result[1] == tc[1], result
+    for string, (parameter, expected) in affix_test_cases.items():
+        env = {"parameter": parameter}
+        assert pe.expand(string, env) == expected
+
+
+def test_substring():
+    for string, (parameter, expected) in substring_test_cases.items():
+        env = {"parameter": parameter}
+        assert pe.expand(string, env) == expected, (string, parameter)
+
+
+def test_replace():
+    for string, (parameter, expected) in replace_test_cases.items():
+        env = {"parameter": parameter}
+        assert pe.expand(string, env) == expected, (string, parameter)
+
+
+def test_simple():
+    for string, (env, expected) in simple_test_cases.items():
+        assert pe.expand(string, env) == expected, (string, env)
