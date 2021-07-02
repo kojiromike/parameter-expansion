@@ -181,7 +181,9 @@ def follow_brace(shl, env):
                 replace_all = True
                 arg1 = next(shl)
 
-            sep = next(shl)
+            # the repl of a replacement may not exist at all with no trailing
+            # slash or it may be empty
+            sep = next(shl, "/")
             if sep != "/":
                 raise ParameterExpansionParseError("Illegal replacement syntax")
 

@@ -113,6 +113,14 @@ replace_test_cases = {
         "aa/bb/aa",
         "-zz/bb/zz-",
     ),
+    "-${parameter/aa}-": (
+        "aa/bb/aa",
+        "-/bb/aa-",
+    ),
+    "-${parameter//aa}-": (
+        "aa/bb/aa",
+        "-/bb/-",
+    ),
 }
 
 simple_test_cases = {
