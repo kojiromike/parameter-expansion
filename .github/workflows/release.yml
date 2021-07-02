@@ -1,41 +1,37 @@
 name: Release
 
 on:
-  workflow_dispatch:
-  workflow_run:
-    workflows:
-    - Tests
+  push:
     branches:
     - main
-    types:
-    - completed
+  pull_request:
+    branches:
+    - main
 
 jobs:
-  release:
+  semantic-version:
+    name: Semantic Version
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
-
-    - name: Set Up Git
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-
-    - name: GitHub Login
-      run: gh auth login --with-token <<< '${{ secrets.GITHUB_TOKEN }}'
 
     - name: Setup Python
       uses: actions/setup-python@v2
       with:
         python-version: '3.9'
 
+    - name: Set Up Git
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git fetch --tags
+
     - name: Install Package
       run: python -m pip install build
 
-    - name: Bump Version
+    - name: Check Version
       run: |
         desc=$(git describe)
         head=$(git show-ref --hash --head HEAD)

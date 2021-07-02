@@ -65,17 +65,29 @@ expansion procedures using these variables.
     'abcabc/123-def.ghiabc'
 ```
 
+[posix-pe]: http://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html#tag_02_06_02
 
 
+## Is any other library doing a similar thing?
 
-## Any other library doing similar thing?
-
--  https://github.com/sayanarijit/expandvars has similar features yet does not cover all the expansions that this library supports (such as %, # and nested variables).
-
--  https://github.com/sloria/environs
+- [sayanarijit/expandvars](https://github.com/sayanarijit/expandvars) has similar features yet does not cover all the expansions that this library supports (such as %, # and nested variables).
+- [sloria/environs](https://github.com/sloria/environs)
 
 
+## Contributing
 
+Contributions are welcome. If you would like to add some code, open a pull request. If you need help or are unsure about how to go about contributing, feel free to [open an issue](https://github.com/kojiromike/parameter-expansion/issues/new) or [a discussion](https://github.com/kojiromike/parameter-expansion/discussions/new).
+
+
+### Pull Requests and Semantic Versioning
+
+This project will try to stick to versions that are compatible with both [PEP 440](https://www.python.org/dev/peps/pep-0440/) and [Semantic Versioning 2.0.0](https://semver.org/) as much as possible. This means...
+
+- ...a *major* version, as in 1.0.2 -> 2.0.0 indicates an incompatible/breaking API change.
+- ...a *minor* version, as in 1.3.2 -> 1.4.0 indicates new functionality that maintains backwards compatibility for existing features.
+- ...a *patch* version, as in 1.1.2 -> 1.1.3 indicates a bugfix or other improvement with no significant api changes or new features.
+
+Deciding the semantics of a version bump are something best done by humans, and what better place to make that decision than in the pull request itself? Each pull request should have a new version of the project. When a PR is merged, that version information will be used to automatically create a build, release and deploy to pypi.
 
 
 [1]: https://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html#tag_02_06_02
