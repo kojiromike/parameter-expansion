@@ -1,5 +1,14 @@
 # POSIX Parameter Expansion
 
+![GitHub](https://img.shields.io/github/license/kojiromike/parameter-expansion)
+![PyPI](https://img.shields.io/pypi/v/parameter-expansion)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/parameter-expansion)
+![PyPI - Wheel](https://img.shields.io/pypi/wheel/parameter-expansion)
+[![CodeQL](https://github.com/kojiromike/parameter-expansion/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/kojiromike/parameter-expansion/actions/workflows/codeql-analysis.yml)
+[![Tests](https://github.com/kojiromike/parameter-expansion/actions/workflows/test.yml/badge.svg)](https://github.com/kojiromike/parameter-expansion/actions/workflows/test.yml)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/parameter-expansion)
+
+
 This is an experiment to create a Python library to enable
 [POSIX parameter expansion][1] from a string.
 
