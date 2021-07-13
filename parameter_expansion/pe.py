@@ -26,19 +26,36 @@ completely reimplementing [POSIX pattern matching][2]
 [3]: https://www.gnu.org/software/bash/manual/html_node/Shell-Parameter-Expansion.html
 """
 
+import logging
 import os
+import sys
 from fnmatch import fnmatchcase
+from itertools import groupby
 from itertools import takewhile
 from shlex import shlex
 
+# Tracing flags: set to True to enable debug trace
+TRACE = False
+logger = logging.getLogger(__name__)
 
-def expand(s, env=None):
+if TRACE:
+    logging.basicConfig(stream=sys.stdout)
+    logger.setLevel(logging.DEBUG)
+
+
+def logger_debug(*args):
+    return logger.debug(' '.join(a if isinstance(a, str) else repr(a) for a in args))
+
+
+def expand(s, env=None, strict=False):
     """Expand the string using POSIX parameter expansion rules.
-    Uses the provided environment dict or the actual environment."""
+    Uses the provided environment dict or the actual environment.
+    If strict is True, raise a ParameterExpansionNullError on missing
+    env variable."""
     if env is None:
         env = dict(os.environ)
     s = expand_simple(s, env)
-    return "".join(expand_tokens(s, env))
+    return "".join(expand_tokens(s, env, strict))
 
 
 class ParameterExpansionNullError(LookupError):
@@ -49,22 +66,41 @@ class ParameterExpansionParseError(Exception):
     pass
 
 
-def expand_tokens(s, env):
-    shl = shlex(s, posix=True)
-    shl.commenters = ""
+def expand_tokens(s, env, strict=False):
+    tokens = tokenize(s)
     while True:
         try:
-            yield "".join(takewhile(lambda t: t != "$", shl))
-            yield follow_sigil(shl, env)
+            before_dollar = "".join(takewhile(lambda t: t != "$", tokens))
+            logger_debug('expand_tokens: before_dollar:', repr(before_dollar))
+            yield before_dollar
+            sigil = follow_sigil(tokens, env, strict)
+            logger_debug('expand_tokens: sigil:', repr(sigil))
+            yield sigil
         except StopIteration:
             return
 
 
-def follow_sigil(shl, env):
+def tokenize(s):
+    """Yield token strings lexed from the shell string s.
+    """
+    shl = shlex(s, posix=True)
+    shl.commenters = ""
+    shl.whitespace = ""
+    for grouped, group in groupby(shl, key=is_whitespace):
+        # we group contiguous whitespaces in one string
+        if grouped:
+            yield "".join(group)
+        else:
+            yield from group
+
+
+def follow_sigil(shl, env, strict=False):
     param = next(shl)
     if param == "{":
-        consume = iter(list(takewhile(lambda t: t != "}", shl)))
-        return follow_brace(consume, env)
+        consume = list(takewhile(lambda t: t != "}", shl))
+        logger_debug('follow_sigil: consume:', consume)
+        consume = iter(consume)
+        return follow_brace(consume, env, strict)
     return env.get(param, "")
 
 
@@ -115,18 +151,42 @@ def remove_prefix(subst, shl):
     return remove_affix(subst, shl, False)
 
 
-def follow_brace(shl, env):
+def is_whitespace(s):
+    return all(c in " \t\n" for c in s)
+
+
+def follow_brace(shl, env, strict=False):
     param = next(shl)
+    logger_debug('follow_brace: param:', repr(param))
     if param == "#":
         word = next(shl)
-        subst = env.get(word, "")
+
+        try:
+            subst = env[word]
+        except KeyError:
+            if strict:
+                raise ParameterExpansionNullError(word)
+            else:
+                subst = ""
         return str(len(subst))
-    subst = env.get(param, "")
-    param_set_and_not_null = bool(subst and (param in env))
+
+    try:
+        subst = env[param]
+    except KeyError:
+        if strict:
+            raise ParameterExpansionNullError(param)
+        else:
+            subst = ""
+
+    logger_debug('follow_brace: subst:', repr(subst))
     param_unset = param not in env
+    param_set_and_not_null = bool(subst and (param in env))
     try:
         modifier = next(shl)
-        if modifier == "%":
+        logger_debug('follow_brace: modifier:', repr(modifier))
+        if is_whitespace(modifier):
+            pass
+        elif modifier == "%":
             return remove_suffix(subst, shl)
         elif modifier == "#":
             return remove_prefix(subst, shl)
@@ -142,7 +202,7 @@ def follow_brace(shl, env):
                 if param_set_and_not_null:
                     return subst
                 env[param] = word
-                return env[param]
+                return word
             elif modifier == "?":
                 if param_set_and_not_null:
                     return subst
@@ -172,26 +232,36 @@ def follow_brace(shl, env):
                 return subst
             else:
                 raise ParameterExpansionParseError()
+
         elif modifier == "/":
-            # this is a string replacement
+            # this is a string replacement as in replace foo by bar using / as sep
             arg1 = next(shl)
+            logger_debug('follow_brace: subst/1: arg1.1:', repr(arg1))
             replace_all = False
             if arg1 == "/":
                 # with // replace all occurences
                 replace_all = True
                 arg1 = next(shl)
 
-            # the repl of a replacement may not exist at all with no trailing
-            # slash or it may be empty
-            sep = next(shl, "/")
-            if sep != "/":
-                raise ParameterExpansionParseError("Illegal replacement syntax")
+            has_sep = False
 
-            # the repl of a replacement may be empty
-            try:
-                arg2 = next(shl)
-            except StopIteration:
-                arg2 = ""
+            # join anything in between the start / and middle /
+            for na in shl:
+                logger_debug('follow_brace: subst/1: shl/na:', repr(na))
+                if na == "/":
+                    has_sep = True
+                    break
+                arg1 += na
+
+            logger_debug(
+                'follow_brace: subst/1: arg1.2:', repr(arg1), 'has_sep:', has_sep)
+
+            arg2 = ""
+            if has_sep:
+                # Join anything in between the after the middle / until the end.
+                # Note: the arg2 replacement value of a replacement may be empty
+                for na in shl:
+                    arg2 += na
 
             if param_set_and_not_null:
                 if replace_all:
@@ -200,6 +270,7 @@ def follow_brace(shl, env):
                     return subst.replace(arg1, arg2, 1)
 
             return subst
+
         else:
             if modifier == "-":
                 word = next(shl)
@@ -210,7 +281,7 @@ def follow_brace(shl, env):
                 word = next(shl)
                 if param_unset:
                     env[param] = word
-                    return env[param]
+                    return word
                 return subst  # may be ""
             elif modifier == "?":
                 if param_unset:
