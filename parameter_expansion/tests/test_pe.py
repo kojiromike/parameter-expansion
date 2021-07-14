@@ -288,7 +288,10 @@ def test_simple():
 
 def test_expand_simple():
     for string, (env, expected) in simple_simple_test_cases.items():
-        assert parameter_expansion.pe.expand_simple(string, env) == expected, (string, env)
+        assert parameter_expansion.pe.expand_simple(string, env) == expected, (
+            string,
+            env,
+        )
 
 
 def test_expand_strict_raises_Exception():
@@ -305,18 +308,38 @@ def test_tokenize_preserves_spaces():
     s = " - $parameter/$aa/${bb}   - \t- \n ${parameter/ aa /   - zz }- "
     tokens = list(parameter_expansion.pe.tokenize(s))
     expected = [
-        " ", "-", " ",
-        "$", "parameter",
+        " ",
+        "-",
+        " ",
+        "$",
+        "parameter",
         "/",
-        "$", "aa",
+        "$",
+        "aa",
         "/",
-        "$", "{", "bb", "}",
+        "$",
+        "{",
+        "bb",
+        "}",
         "   ",
         "-",
         " \t",
         "-",
         " \n ",
-        "$", "{", "parameter", "/", " ", "aa", " ", "/", "   ", "-", " ", "zz", " ", "}",
+        "$",
+        "{",
+        "parameter",
+        "/",
+        " ",
+        "aa",
+        " ",
+        "/",
+        "   ",
+        "-",
+        " ",
+        "zz",
+        " ",
+        "}",
         "-",
         " ",
     ]

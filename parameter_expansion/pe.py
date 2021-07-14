@@ -30,8 +30,7 @@ import logging
 import os
 import sys
 from fnmatch import fnmatchcase
-from itertools import groupby
-from itertools import takewhile
+from itertools import groupby, takewhile
 from shlex import shlex
 
 # Tracing flags: set to True to enable debug trace
@@ -44,7 +43,7 @@ if TRACE:
 
 
 def logger_debug(*args):
-    return logger.debug(' '.join(a if isinstance(a, str) else repr(a) for a in args))
+    return logger.debug(" ".join(a if isinstance(a, str) else repr(a) for a in args))
 
 
 def expand(s, env=None, strict=False):
@@ -71,18 +70,17 @@ def expand_tokens(s, env, strict=False):
     while True:
         try:
             before_dollar = "".join(takewhile(lambda t: t != "$", tokens))
-            logger_debug('expand_tokens: before_dollar:', repr(before_dollar))
+            logger_debug("expand_tokens: before_dollar:", repr(before_dollar))
             yield before_dollar
             sigil = follow_sigil(tokens, env, strict)
-            logger_debug('expand_tokens: sigil:', repr(sigil))
+            logger_debug("expand_tokens: sigil:", repr(sigil))
             yield sigil
         except StopIteration:
             return
 
 
 def tokenize(s):
-    """Yield token strings lexed from the shell string s.
-    """
+    """Yield token strings lexed from the shell string s."""
     shl = shlex(s, posix=True)
     shl.commenters = ""
     shl.whitespace = ""
@@ -98,7 +96,7 @@ def follow_sigil(shl, env, strict=False):
     param = next(shl)
     if param == "{":
         consume = list(takewhile(lambda t: t != "}", shl))
-        logger_debug('follow_sigil: consume:', consume)
+        logger_debug("follow_sigil: consume:", consume)
         consume = iter(consume)
         return follow_brace(consume, env, strict)
     return env.get(param, "")
@@ -157,7 +155,7 @@ def is_whitespace(s):
 
 def follow_brace(shl, env, strict=False):
     param = next(shl)
-    logger_debug('follow_brace: param:', repr(param))
+    logger_debug("follow_brace: param:", repr(param))
     if param == "#":
         word = next(shl)
 
@@ -178,12 +176,12 @@ def follow_brace(shl, env, strict=False):
         else:
             subst = ""
 
-    logger_debug('follow_brace: subst:', repr(subst))
+    logger_debug("follow_brace: subst:", repr(subst))
     param_unset = param not in env
     param_set_and_not_null = bool(subst and (param in env))
     try:
         modifier = next(shl)
-        logger_debug('follow_brace: modifier:', repr(modifier))
+        logger_debug("follow_brace: modifier:", repr(modifier))
         if is_whitespace(modifier):
             pass
         elif modifier == "%":
@@ -236,7 +234,7 @@ def follow_brace(shl, env, strict=False):
         elif modifier == "/":
             # this is a string replacement as in replace foo by bar using / as sep
             arg1 = next(shl)
-            logger_debug('follow_brace: subst/1: arg1.1:', repr(arg1))
+            logger_debug("follow_brace: subst/1: arg1.1:", repr(arg1))
             replace_all = False
             if arg1 == "/":
                 # with // replace all occurences
@@ -247,14 +245,15 @@ def follow_brace(shl, env, strict=False):
 
             # join anything in between the start / and middle /
             for na in shl:
-                logger_debug('follow_brace: subst/1: shl/na:', repr(na))
+                logger_debug("follow_brace: subst/1: shl/na:", repr(na))
                 if na == "/":
                     has_sep = True
                     break
                 arg1 += na
 
             logger_debug(
-                'follow_brace: subst/1: arg1.2:', repr(arg1), 'has_sep:', has_sep)
+                "follow_brace: subst/1: arg1.2:", repr(arg1), "has_sep:", has_sep
+            )
 
             arg2 = ""
             if has_sep:
