@@ -43,7 +43,7 @@ if TRACE:
 
 
 def logger_debug(*args):
-    return logger.debug(" ".join(a if isinstance(a, str) else repr(a) for a in args))
+    logger.debug(" ".join(a if isinstance(a, str) else repr(a) for a in args))
 
 
 def expand(s, env=None, strict=False):
@@ -118,16 +118,47 @@ def expand_simple(s, env):
 
 def remove_affix(subst, shl, suffix=True):
     """
-    http://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html#tag_02_13
+    From http://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html#tag_02_13
+
+       > The following four varieties of parameter expansion provide for
+       substring processing. In each case, pattern matching notation (see
+       Pattern Matching Notation), rather than regular expression notation,
+       shall be used to evaluate the patterns. If parameter is '*' or '@', the
+       result of the expansion is unspecified. Enclosing the full parameter
+       expansion string in double-quotes shall not cause the following four
+       varieties of pattern characters to be quoted, whereas quoting characters
+       within the braces shall have this effect.
+
+       > ${parameter%word} : Remove Smallest Suffix Pattern. The word shall be
+       expanded to produce a pattern. The parameter expansion shall then result
+       in parameter, with the smallest portion of the suffix matched by the
+       pattern deleted.
+
+       > ${parameter%%word} : Remove Largest Suffix Pattern. The word shall be
+       expanded to produce a pattern. The parameter expansion shall then result
+       in parameter, with the largest portion of the suffix matched by the
+       pattern deleted.
+
+       > ${parameter#word} : Remove Smallest Prefix Pattern. The word shall be
+       expanded to produce a pattern. The parameter expansion shall then result
+       in parameter, with the smallest portion of the prefix matched by the
+       pattern deleted.
+
+       > ${parameter##word} : Remove Largest Prefix Pattern. The word shall be
+       expanded to produce a pattern. The parameter expansion shall then result
+       in parameter, with the largest portion of the prefix matched by the
+       pattern deleted.
     """
-    max = False
+    largest = False
+    # at this stage shl has already been trimmed from its leading % or # so
+    # we check for a second % or # to find if we need a largest match or not
     pat = "".join(shl)
-    if pat[0] == ("%" if suffix else "#"):
-        max = True
+    if pat.startswith("%" if suffix else "#"):
+        largest = True
         pat = pat[1:]
     size = len(subst)
     indices = range(0, size)
-    if max != suffix:
+    if largest != suffix:
         indices = reversed(indices)
     if suffix:
         for i in indices:
@@ -142,11 +173,11 @@ def remove_affix(subst, shl, suffix=True):
 
 
 def remove_suffix(subst, shl):
-    return remove_affix(subst, shl, True)
+    return remove_affix(subst=subst, shl=shl, suffix=True)
 
 
 def remove_prefix(subst, shl):
-    return remove_affix(subst, shl, False)
+    return remove_affix(subst=subst, shl=shl, suffix=False)
 
 
 def is_whitespace(s):
@@ -154,6 +185,7 @@ def is_whitespace(s):
 
 
 def follow_brace(shl, env, strict=False):
+    """Expand and return expanded value up to the closing curly brace in ``shl``."""
     param = next(shl)
     logger_debug("follow_brace: param:", repr(param))
     if param == "#":
@@ -209,30 +241,68 @@ def follow_brace(shl, env, strict=False):
                 if param_set_and_not_null:
                     return next(shl)
                 return subst  # ""
-            elif modifier.isdigit():
-                # this is a Substring Expansion as in ${foo:4:2}
-                # This is a bash'ism, and not POSIX.
+            elif modifier.isdigit() or modifier == ":":
+
+                # This is a Substring Expansion as in ${foo:4:2}, ${foo::2},
+                # ${foo:4:} or ${foo:4:2} in the generale form of
+                # ${parameter:start:length}. No start means start=0. No length
+                # means everything from start to end. This is a bash'ism, and
+                # not POSIX.
                 # see https://www.gnu.org/software/bash/manual/html_node/Shell-Parameter-Expansion.html
-                try:
-                    start = int(modifier)
-                except ValueError as e:
-                    raise ParameterExpansionParseError("Not a bash slice", shl) from e
+
+                logger_debug(f"    in substring: modifier1: {modifier}")
+
+                if modifier == ":":
+                    # if there is no start we have a slice that's {$foo::2}
+                    start = 0
+                    try:
+                        length = int(next(shl))
+                    except StopIteration:
+                        # if there is no length we have a slice that's {$foo::}
+                        # no slice in bash means length = 0
+                        length = 0
+                        return ""
+                else:
+                    try:
+                        start = int(modifier)
+                    except ValueError as e:
+                        raise ParameterExpansionParseError(
+                            "Not a bash substring", shl
+                        ) from e
+
+                    try:
+                        modifier = next(shl)
+                    except StopIteration:
+                        # There is only a start and no length as in ${foo:4} and
+                        # the length is therefore everything to the end i.e.
+                        # with foo=123456 ${foo:4} is 56
+                        if param_set_and_not_null:
+                            return subst[start:]
+                        else:
+                            return subst
+
+                    if modifier != ":":
+                        raise ParameterExpansionParseError(
+                            "Illegal substring argument", shl
+                        )
+
+                    try:
+                        length = int(next(shl))
+                    except StopIteration:
+                        # If there is no length we have a substring that's
+                        # {$foo::} no length in bash means length = 0
+                        length = 0
+                        return ""
+
                 if param_set_and_not_null:
-                    subst = subst[start:]
-                # if this fails, we will StopIteration and we have a plain ${foo:4}
-                # and subst above will be returned
-                modifier = next(shl)
-                if modifier != ":":
-                    raise ParameterExpansionParseError("Illegal slice argument", shl)
-                end = int(next(shl))
-                if param_set_and_not_null:
-                    return subst[:end]
+                    return subst[start : start + length]
                 return subst
             else:
                 raise ParameterExpansionParseError()
 
         elif modifier == "/":
-            # this is a string replacement as in replace foo by bar using / as sep
+            # This is a string replacement as in replace foo by bar using / as
+            # sep.
             arg1 = next(shl)
             logger_debug("follow_brace: subst/1: arg1.1:", repr(arg1))
             replace_all = False
