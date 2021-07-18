@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-import pytest
+import pytest  # type: ignore
 
 import parameter_expansion as pex
 import parameter_expansion.pe
