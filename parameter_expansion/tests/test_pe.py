@@ -5,11 +5,16 @@ import pytest
 import parameter_expansion as pex
 import parameter_expansion.pe
 
-Test = namedtuple("Test", ["tested_shell", "expected_str", "env"])
+#
+# This tuple describes a test case where we test the expansion of a
+# "tested_shell" strings with the "env" mapping of environment variables and
+# ensure that expanded results are equal to the "expected_str" string.
+Case = namedtuple("Case", ["tested_shell", "expected_str", "env"])
 
+#
+# tests POSIX expansion
 subst_test_cases = [
-    # string,        (set_and_not_null, set_but_null, unset)
-    Test(
+    Case(
         tested_shell="-$parameter-",
         expected_str="-set-",
         env={
@@ -17,7 +22,7 @@ subst_test_cases = [
             "word": "word",
         },  # set and not null
     ),
-    Test(
+    Case(
         tested_shell="-$parameter-",
         expected_str="--",
         env={
@@ -25,14 +30,14 @@ subst_test_cases = [
             "word": "word",
         },  # set but null
     ),
-    Test(
+    Case(
         tested_shell="-$parameter-",
         expected_str="-$parameter-",
         env={
             "word": "word",
         },  # unset
     ),
-    Test(
+    Case(
         tested_shell="-${parameter}-",
         expected_str="-set-",
         env={
@@ -40,7 +45,7 @@ subst_test_cases = [
             "word": "word",
         },  # set and not null
     ),
-    Test(
+    Case(
         tested_shell="-${parameter}-",
         expected_str="--",
         env={
@@ -48,14 +53,14 @@ subst_test_cases = [
             "word": "word",
         },  # set but null
     ),
-    Test(
+    Case(
         tested_shell="-${parameter}-",
         expected_str="--",
         env={
             "word": "word",
         },  # unset
     ),
-    Test(
+    Case(
         tested_shell="-${parameter:-word}-",
         expected_str="-set-",
         env={
@@ -63,7 +68,7 @@ subst_test_cases = [
             "word": "word",
         },  # set and not null
     ),
-    Test(
+    Case(
         tested_shell="-${parameter:-word}-",
         expected_str="-word-",
         env={
@@ -71,14 +76,14 @@ subst_test_cases = [
             "word": "word",
         },  # set but null
     ),
-    Test(
+    Case(
         tested_shell="-${parameter:-word}-",
         expected_str="-word-",
         env={
             "word": "word",
         },  # unset
     ),
-    Test(
+    Case(
         tested_shell="-${parameter-word}-",
         expected_str="-set-",
         env={
@@ -86,7 +91,7 @@ subst_test_cases = [
             "word": "word",
         },  # set and not null
     ),
-    Test(
+    Case(
         tested_shell="-${parameter-word}-",
         expected_str="--",
         env={
@@ -94,14 +99,14 @@ subst_test_cases = [
             "word": "word",
         },  # set but null
     ),
-    Test(
+    Case(
         tested_shell="-${parameter-word}-",
         env={
             "word": "word",
         },  # unset
         expected_str="-word-",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter:=word}-",
         env={
             "parameter": "set",
@@ -109,7 +114,7 @@ subst_test_cases = [
         },  # set and not null
         expected_str="-set-",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter:=word}-",
         env={
             "parameter": "",
@@ -117,14 +122,14 @@ subst_test_cases = [
         },  # set but null
         expected_str="-word-",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter:=word}-",
         env={
             "word": "word",
         },  # unset
         expected_str="-word-",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter=word}-",
         env={
             "parameter": "set",
@@ -132,7 +137,7 @@ subst_test_cases = [
         },  # set and not null
         expected_str="-set-",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter=word}-",
         env={
             "parameter": "",
@@ -140,14 +145,14 @@ subst_test_cases = [
         },  # set but null
         expected_str="--",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter=word}-",
         env={
             "word": "word",
         },  # unset
         expected_str="-word-",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter:?word}-",
         env={
             "parameter": "set",
@@ -155,7 +160,7 @@ subst_test_cases = [
         },  # set and not null
         expected_str="-set-",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter:?word}-",
         env={
             "parameter": "",
@@ -163,14 +168,14 @@ subst_test_cases = [
         },  # set but null
         expected_str="error",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter:?word}-",
         env={
             "word": "word",
         },  # unset
         expected_str="error",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter?word}-",
         env={
             "parameter": "set",
@@ -178,7 +183,7 @@ subst_test_cases = [
         },  # set and not null
         expected_str="-set-",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter?word}-",
         env={
             "parameter": "",
@@ -186,14 +191,14 @@ subst_test_cases = [
         },  # set but null
         expected_str="--",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter?word}-",
         env={
             "word": "word",
         },  # unset
         expected_str="error",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter:+word}-",
         env={
             "parameter": "set",
@@ -201,7 +206,7 @@ subst_test_cases = [
         },  # set and not null
         expected_str="-word-",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter:+word}-",
         env={
             "parameter": "",
@@ -209,14 +214,14 @@ subst_test_cases = [
         },  # set but null
         expected_str="--",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter:+word}-",
         env={
             "word": "word",
         },  # unset
         expected_str="--",
     ),
-    Test(
+    Case(
         tested_shell="- ${parameter:+word} -",
         env={
             "parameter": "set",
@@ -224,7 +229,7 @@ subst_test_cases = [
         },  # set and not null
         expected_str="- word -",
     ),
-    Test(
+    Case(
         tested_shell="- ${parameter:+word} -",
         env={
             "parameter": "",
@@ -232,14 +237,14 @@ subst_test_cases = [
         },  # set but null
         expected_str="-  -",
     ),
-    Test(
+    Case(
         tested_shell="- ${parameter:+word} -",
         env={
             "word": "word",
         },  # unset
         expected_str="-  -",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter+word}-",
         env={
             "parameter": "set",
@@ -247,7 +252,7 @@ subst_test_cases = [
         },  # set and not null
         expected_str="-word-",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter+word}-",
         env={
             "parameter": "",
@@ -255,14 +260,14 @@ subst_test_cases = [
         },  # set but null
         expected_str="-word-",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter+word}-",
         env={
             "word": "word",
         },  # unset
         expected_str="--",
     ),
-    Test(
+    Case(
         tested_shell="-${#parameter}-",
         env={
             "parameter": "set",
@@ -270,7 +275,7 @@ subst_test_cases = [
         },  # set and not null
         expected_str="-3-",
     ),
-    Test(
+    Case(
         tested_shell="-${#parameter}-",
         env={
             "parameter": "",
@@ -278,7 +283,7 @@ subst_test_cases = [
         },  # set but null
         expected_str="-0-",
     ),
-    Test(
+    Case(
         tested_shell="-${#parameter}-",
         env={
             "word": "word",
@@ -289,114 +294,114 @@ subst_test_cases = [
 
 affix_test_cases = [
     # tested shell string, (parameter, expected result)
-    Test(
+    Case(
         tested_shell="-${parameter%/*}-",
         env={"parameter": "aa/bb/cc"},
         expected_str="-aa/bb-",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter%%/*}-",
         env={"parameter": "aa/bb/cc"},
         expected_str="-aa-",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter#*/}-",
         env={"parameter": "aa/bb/cc"},
         expected_str="-bb/cc-",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter##*/}-",
         env={"parameter": "aa/bb/cc"},
         expected_str="-cc-",
     ),
 ]
 
+# test Bash substrings
 substring_test_cases = [
-    # tested shell string, (parameter, expected result)
-    Test(
+    Case(
         tested_shell="-${parameter:0:2}-",
         env={"parameter": "aa/bb/cc"},
         expected_str="-aa-",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter:3:2}-",
         env={"parameter": "aa/bb/cc"},
         expected_str="-bb-",
     ),
-    Test(
+    Case(
         tested_shell="- ${parameter:3:2} -",
         env={"parameter": "aa/bb/cc"},
         expected_str="- bb -",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter:6}-",
         env={"parameter": "aa/bb/cc"},
         expected_str="-cc-",
     ),
 ]
 
+# test Bash string replacement
 replace_test_cases = [
-    # tested shell string,  (parameter, expected_str)
-    Test(
+    Case(
         tested_shell="-${parameter/aa/bb}-",
         env={"parameter": "aa/bb/cc"},
         expected_str="-bb/bb/cc-",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter/aa}-",
         env={"parameter": "aa/bb/cc"},
         expected_str="-/bb/cc-",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter/ aa / - zz }-",
         env={"parameter": "bb/ aa /cc"},
         expected_str="-bb/ - zz /cc-",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter/aa/}-",
         env={"parameter": "aa/bb/cc"},
         expected_str="-/bb/cc-",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter/aa/zz}-",
         env={"parameter": "aa/bb/aa"},
         expected_str="-zz/bb/aa-",
     ),
-    Test(
+    Case(
         tested_shell="- ${parameter/aa/zz} -",
         env={"parameter": "aa/bb/aa"},
         expected_str="- zz/bb/aa -",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter//aa/zz}-",
         env={"parameter": "aa/bb/aa"},
         expected_str="-zz/bb/zz-",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter//aa}-",
         env={"parameter": "aa/bb/aa"},
         expected_str="-/bb/-",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter//aa/ zz}-",
         env={"parameter": "aa/bb/aa"},
         expected_str="- zz/bb/ zz-",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter/aa}-",
         env={"parameter": "aa/bb/aa"},
         expected_str="-/bb/aa-",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter//aa}-",
         env={"parameter": "aa/bb/aa"},
         expected_str="-/bb/-",
     ),
 ]
 
+# test expansion of nested plain parameters without expressions
 simple_test_cases = [
-    # tested shell string,    (env, expected result)
-    Test(
+    Case(
         tested_shell="-${parameter/$aa/$bb}-",
         env=dict(
             parameter="FOO/bb/cc",
@@ -405,7 +410,7 @@ simple_test_cases = [
         ),
         expected_str="-BAR/bb/cc-",
     ),
-    Test(
+    Case(
         tested_shell="- ${parameter/$aa/$bb} -",
         env=dict(
             parameter="FOO/bb/cc",
@@ -414,7 +419,7 @@ simple_test_cases = [
         ),
         expected_str="- BAR/bb/cc -",
     ),
-    Test(
+    Case(
         tested_shell="-$parameter/$aa/$bb-",
         env=dict(
             parameter="aa/bb/cc",
@@ -423,7 +428,7 @@ simple_test_cases = [
         ),
         expected_str="-aa/bb/cc/FOO/BAR-",
     ),
-    Test(
+    Case(
         tested_shell="-${parameter/${aa}/${bb}}-",
         env=dict(
             parameter="FOO/bb/cc",
@@ -432,7 +437,7 @@ simple_test_cases = [
         ),
         expected_str="-BAR/bb/cc-",
     ),
-    Test(
+    Case(
         tested_shell="-$parameter/$aa/${bb}-",
         expected_str="-aa/bb/cc/FOO/BAR-",
         env=dict(
@@ -441,7 +446,7 @@ simple_test_cases = [
             bb="BAR",
         ),
     ),
-    Test(
+    Case(
         tested_shell="- $parameter/$aa/${bb} -",
         env=dict(
             parameter="aa/bb/cc",
@@ -452,9 +457,9 @@ simple_test_cases = [
     ),
 ]
 
+# test expansion of plain parameters without expressions
 simple_simple_test_cases = [
-    # string,               env, result
-    Test(
+    Case(
         tested_shell="-$parameter/$aa/$bb-",
         env=dict(
             parameter="aa/bb/cc",
@@ -463,7 +468,7 @@ simple_simple_test_cases = [
         ),
         expected_str="-aa/bb/cc/FOO/BAR-",
     ),
-    Test(
+    Case(
         tested_shell="-$parameter/$aa/${bb}-",
         env=dict(
             parameter="aa/bb/cc",
@@ -472,7 +477,7 @@ simple_simple_test_cases = [
         ),
         expected_str="-aa/bb/cc/FOO/BAR-",
     ),
-    Test(
+    Case(
         tested_shell="- $parameter/$aa/${bb} -",
         expected_str="- aa/bb/cc/FOO/BAR -",
         env=dict(
