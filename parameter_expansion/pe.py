@@ -12,13 +12,17 @@ Also support some minimal Bash extensions to expansion [3]:
 
 (Pull requests to remove limitations are welcome.)
 
-- Only simple nested expansions of the forms $variable and ${variable} are
-supported and not complex expansions such as in `${foo:-${bar:-$baz}}`
+- Most nested expression expansions should be supported now, but YMMV. Things such
+as in `${foo:-${bar:-$baz}}`
+
 - Only ASCII alphanumeric characters and underscores are supported in parameter
 names. (Per POSIX, parameter names may not begin with a numeral.)
+
 - Assignment expansions do not mutate the real environment.
+
 - For simplicity's sake, this implementation uses fnmatch instead of
 completely reimplementing [POSIX pattern matching][2]
+
 - Comments in strings are unsupported.
 
 [1]: http://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html#tag_02_06_02
@@ -28,13 +32,16 @@ completely reimplementing [POSIX pattern matching][2]
 
 import logging
 import os
+import re
 import sys
 from fnmatch import fnmatchcase
-from itertools import groupby, takewhile
+from itertools import groupby
+from itertools import takewhile
 from shlex import shlex
 
 # Tracing flags: set to True to enable debug trace
 TRACE = False
+
 logger = logging.getLogger(__name__)
 
 if TRACE:
@@ -50,11 +57,45 @@ def expand(s, env=None, strict=False):
     """Expand the string using POSIX parameter expansion rules.
     Uses the provided environment dict or the actual environment.
     If strict is True, raise a ParameterExpansionNullError on missing
-    env variable."""
+    env variable.
+
+    For example::
+    >>> env = {"foo": "bar", "foobar": "BAR"}
+    >>> expand("${foo${foo}}", env=env, strict=True)
+    'BAR'
+    """
     if env is None:
         env = dict(os.environ)
-    s = expand_simple(s, env)
-    return "".join(expand_tokens(s, env, strict))
+
+    # Loop until fully expanded or no longer expanding anything
+    #  - expand simple parameters (i.e. these without a shell expression)
+    #  - get plain expressions and expand them (i.e. non-nested expressions)
+    # Eventually all complex expressions are composed of simple expressions and
+    # will be expanded this way.
+    while True:
+        # use this to track if we are expanding in this cycle
+        original_s = s
+        s = expand_simple(s, env)
+
+        plain_exps = get_plain_expressions(s)
+
+        if not plain_exps:
+            break
+
+        for plain in plain_exps:
+
+            expanded = "".join(expand_tokens(plain, env=env, strict=strict))
+            logger_debug("expand: plain:", plain, "expanded:", expanded)
+            s = s.replace(plain, expanded)
+            s = expand_simple(s, env)
+
+        # check if we expanded or not in this cycle and exit
+        has_expanded = s != original_s
+        if not has_expanded:
+            break
+
+    logger_debug("expand: final", s)
+    return s
 
 
 class ParameterExpansionNullError(LookupError):
@@ -92,6 +133,21 @@ def tokenize(s):
             yield from group
 
 
+_get_non_nested_expressions = re.compile(r"(\$\{[^${}]+\})").findall
+
+
+def get_plain_expressions(s):
+    """Return a list of plain, non-nested shell expressions found in the shell
+    string s. These are shell expressions that do not further contain a nested
+    expression and can therefore be resolved indenpendently.
+
+    For example::
+    >>> get_plain_expressions("${_pyname%${_pyname#?}}")
+    ['${_pyname#?}']
+    """
+    return _get_non_nested_expressions(s)
+
+
 def follow_sigil(shl, env, strict=False):
     param = next(shl)
     if param == "{":
@@ -109,6 +165,10 @@ def expand_simple(s, env):
     Uses the provided environment dict.
     Similar to ``os.path.expandvars``.
     """
+    # TODO: validate if a plain replace is really what is supposed to happen
+    # in particular simple expansion may need to happen on tokens rather than
+    # on the whole string.
+    # For instance, with foo=bar, abc$fooBAR expands to abc
     for name, value in env.items():
         s = s.replace(f"${name}", value)
         name = "{" + name + "}"
@@ -185,7 +245,9 @@ def is_whitespace(s):
 
 
 def follow_brace(shl, env, strict=False):
-    """Expand and return expanded value up to the closing curly brace in ``shl``."""
+    """Expand and return expanded value up to the closing curly brace in
+    ``shl``.
+    """
     param = next(shl)
     logger_debug("follow_brace: param:", repr(param))
     if param == "#":
