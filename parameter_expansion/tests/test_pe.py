@@ -561,6 +561,13 @@ def test_expand_can_handle_nested_substitution_and_pattern_expand():
     assert expanded_var == "alpha19"
 
 
+def test_expand_simple_expands_longest_param_name_first():
+    env = dict(pkg="foo", pkgver="bar")
+    var = "$pkgver"
+    expanded_var = pex.expand(var, env=env, strict=True)
+    assert expanded_var == "bar"
+
+
 def test_tokenize_preserves_spaces():
     s = " - $parameter/$aa/${bb}   - \t- \n ${parameter/ aa /   - zz }- "
     tokens = list(parameter_expansion.pe.tokenize(s))

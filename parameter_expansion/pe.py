@@ -164,11 +164,13 @@ def expand_simple(s, env):
     Uses the provided environment dict.
     Similar to ``os.path.expandvars``.
     """
-    # TODO: validate if a plain replace is really what is supposed to happen
-    # in particular simple expansion may need to happen on tokens rather than
-    # on the whole string.
-    # For instance, with foo=bar, abc$fooBAR expands to abc
-    for name, value in env.items():
+    env_by_decreasing_name_length = sorted(
+        env.items(),
+        # [0] is the name.  minus its length gets the longest first.
+        key=lambda name_value: -len(name_value[0]),
+    )
+
+    for name, value in env_by_decreasing_name_length:
         s = s.replace(f"${name}", value)
         name = "{" + name + "}"
         s = s.replace(f"${name}", value)
