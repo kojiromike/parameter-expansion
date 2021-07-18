@@ -35,8 +35,7 @@ import os
 import re
 import sys
 from fnmatch import fnmatchcase
-from itertools import groupby
-from itertools import takewhile
+from itertools import groupby, takewhile
 from shlex import shlex
 
 # Tracing flags: set to True to enable debug trace
