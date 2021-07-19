@@ -156,7 +156,10 @@ def follow_sigil(shl, env, strict=False):
         # note: downstream code expects an iterator with a next() and not a list
         inside_sigils = iter(inside_sigils)
         return follow_brace(inside_sigils, env, strict)
-    return env.get(param, "")
+    expanded = env.get(param)
+    if strict and expanded is None:
+        raise ParameterExpansionNullError(param)
+    return expanded or ""
 
 
 def expand_simple(s, env):
