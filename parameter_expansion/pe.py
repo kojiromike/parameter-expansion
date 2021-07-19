@@ -150,10 +150,12 @@ def get_plain_expressions(s):
 def follow_sigil(shl, env, strict=False):
     param = next(shl)
     if param == "{":
-        consume = list(takewhile(lambda t: t != "}", shl))
-        logger_debug("follow_sigil: consume:", consume)
-        consume = iter(consume)
-        return follow_brace(consume, env, strict)
+        # note: we consume the iterator here on purpose
+        inside_sigils = list(takewhile(lambda t: t != "}", shl))
+        logger_debug("follow_sigil: inside_sigils:", inside_sigils)
+        # note: downstream code expects an iterator with a next() and not a list
+        inside_sigils = iter(inside_sigils)
+        return follow_brace(inside_sigils, env, strict)
     return env.get(param, "")
 
 
