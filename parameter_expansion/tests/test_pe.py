@@ -293,7 +293,6 @@ subst_test_cases = [
 ]
 
 affix_test_cases = [
-    # tested shell string, (parameter, expected result)
     Case(
         tested_shell="-${parameter%/*}-",
         env={"parameter": "aa/bb/cc"},
