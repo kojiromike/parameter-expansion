@@ -1,6 +1,12 @@
 name: Release
 
 on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
   workflow_dispatch:
   workflow_run:
     workflows:
@@ -13,7 +19,7 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
     - uses: actions/checkout@v2
       with:
@@ -55,10 +61,16 @@ jobs:
         IFS=. read -r major minor bugfix _ <<< "$version"
         bump="$major.$minor.$(( 1 + bugfix ))"
         set -x
-        gh release create --target "$head" "$bump"
+        # gh release create --target "$head" "$bump"
         git fetch --tags origin
         git tag -fm "$bump" "$bump"  # retag with annotated tag
-        git push --tags --force origin "$bump"
+        # git push --tags --force origin "$bump"
         poetry version --short | grep -qF "$bump"
         poetry build
-        gh release upload "$bump" dist/*
+        # gh release upload "$bump" dist/*
+
+    - name: Configure Test Pypi
+      run: poetry config repositories.testpypi 'https://__token__:${{ secrets.TEST_PYPI_TOKEN }}@test.pypi.org/simple'
+
+    - name: Publish
+      run: poetry publish --dry-run --repository testpypi
