@@ -3,7 +3,10 @@
 """
 Given a string, expand that string using POSIX [parameter expansion][1].
 
-Also support some minimal Bash extensions to expansion [3]:
+Most nested expression expansions should be working now, but YMMV. Things such
+as in `${foo:-${bar:-$baz}}` should work fine.
+
+Also support some level of Bash extensions to expansion [3]:
 - pattern substitution with `${foo/bar/baz}` (but only plain strings and not patterns)
 - substring expansion with `${foo:4:2}
 
@@ -11,9 +14,6 @@ Also support some minimal Bash extensions to expansion [3]:
 ## Limitations
 
 (Pull requests to remove limitations are welcome.)
-
-- Most nested expression expansions should be supported now, but YMMV. Things such
-as in `${foo:-${bar:-$baz}}`
 
 - Only ASCII alphanumeric characters and underscores are supported in parameter
 names. (Per POSIX, parameter names may not begin with a numeral.)
