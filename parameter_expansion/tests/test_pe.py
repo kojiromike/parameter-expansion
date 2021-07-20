@@ -527,7 +527,7 @@ def test_expand_strict_raises_Exception():
     env = dict(foo="bar", bar="baz")
     try:
         pex.expand(string, env, strict=True)
-        raise Exception("ParameterExpansionNullError should be raised")
+        raise AssertionError("ParameterExpansionNullError should be raised")
     except pex.ParameterExpansionNullError:
         pass
 
