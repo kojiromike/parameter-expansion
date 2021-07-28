@@ -72,7 +72,7 @@ expansion procedures using these variables.
 
 -  https://github.com/sayanarijit/expandvars has similar features yet does not cover all the expansions that this library supports (such as %, # and nested variables).
 
--  https://github.com/sloria/environs 
+-  https://github.com/sloria/environs
 
 
 
