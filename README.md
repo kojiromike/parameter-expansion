@@ -11,11 +11,33 @@
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 
 
+This is an experimental Python library to enable
+[POSIX parameter expansion][1] in a string.
+It supports also a subset of [Bash parameter expansion][2].
 
-This is an experiment to create a Python library to enable
-[POSIX parameter expansion][1] from a string.
+## Why not spawning a shell directly for this?
+One reason is that it may be security risk. Another reason is to
+support lightweight analysis or evaluation of shell parameters with
+few system dependencies and outside of a running shell.
 
-## Obvious Test Cases
+For instance this use in [scancode-toolkit][3] as part of a lightweight
+shell script parser to extract and expand parameters found in some
+build scripts.
+
+## Which expansions are supported?
+All the standard shell expansions are supported, including some level
+of nested expansion, as long as this is not too complex or ambiguous.
+In addition, we support Bash substrings and string replacement.
+There is an extensive test suite listing [all supported substitions][4]
+
+
+## How does this work?
+The `expand()` function accepts a string and a dictionary of variables
+(otherwise it uses the current environmnent variables). The string is
+parsed with a custom parser and interpreted to perform the various
+expansion procedures using these variables.
+
+### Obvious Test Cases
 
 ```python
     >>> from parameter_expansion import expand
@@ -44,4 +66,19 @@ This is an experiment to create a Python library to enable
 ```
 
 
-[1]: http://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html#tag_02_06_02
+
+
+## Any other library doing similar thing?
+
+-  https://github.com/sayanarijit/expandvars has similar features yet does not cover all the expansions that this library supports (such as %, # and nested variables).
+
+-  https://github.com/sloria/environs 
+
+
+
+
+
+[1]: https://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html#tag_02_06_02
+[2]: https://www.gnu.org/software/bash/manual/html_node/Shell-Parameter-Expansion.html
+[3]: https://github.com/nexB/scancode-toolkit/blob/develop/src/packagedcode/bashparse.py
+[4]: https://github.com/kojiromike/parameter-expansion/blob/main/parameter_expansion/tests/test_pe.py
