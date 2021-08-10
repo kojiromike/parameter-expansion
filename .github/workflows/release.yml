@@ -51,7 +51,7 @@ jobs:
             ;;
         esac
         IFS=. read -r major minor patch _ <<< "$version"
-        bump="$major.$minor.$bugfix"  # setuptools-scm increments the patch
+        bump="$major.$minor.$patch"  # setuptools-scm increments the patch
         set -x
         gh release create --target "$head" "$bump"
         git fetch --tags origin
