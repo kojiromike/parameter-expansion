@@ -2,3 +2,5 @@
 *.py[co]
 .tox
 dist
+.eggs
+parameter_expansion.egg-info

@@ -32,19 +32,17 @@ jobs:
       with:
         python-version: '3.9'
 
-    - run: pip install poetry poetry-dynamic-versioning
-
     - name: Install Package
-      run: poetry install
+      run: python -m pip install build
 
     - name: Bump Version
       run: |
         desc=$(git describe)
         head=$(git show-ref --hash --head HEAD)
-        version=$(poetry version --short)
+        version=$(python -m setup --version)
         case "$version" in
           0.0.0*)
-            echo 'Poetry failed to get version' >&2
+            echo 'Failed to get version' >&2
             false
             ;;
           "$desc")
@@ -52,13 +50,24 @@ jobs:
             false
             ;;
         esac
-        IFS=. read -r major minor bugfix _ <<< "$version"
-        bump="$major.$minor.$(( 1 + bugfix ))"
+        IFS=. read -r major minor patch _ <<< "$version"
+        bump="$major.$minor.$patch"  # setuptools-scm increments the patch
         set -x
         gh release create --target "$head" "$bump"
         git fetch --tags origin
         git tag -fm "$bump" "$bump"  # retag with annotated tag
         git push --tags --force origin "$bump"
-        poetry version --short | grep -qF "$bump"
-        poetry build
+        python -m build .
+        find dist
+        # test the package versions are fixed outside of git
+        sdist_version=$(tar -O -xf "dist/parameter-expansion-$bump.tar.gz" "parameter-expansion-$bump/src/parameter_expansion.egg-info/PKG-INFO" | awk '/^Version:/{print $2}')
+        wheel_version=$(unzip -p "dist/parameter_expansion-$bump.whl" "parameter_expansion-${bump}.dist-info/METADATA" | awk '/^Version:/{print $2}')
+        if [[ $bump != $sdist_version ]]; then
+          echo "Expected new version $bump, but sdist has version $sdist_version." >&2
+          false
+        fi
+        if [[ $bump != $wheel_version ]]; then
+          echo "Expected new version $bump, but wheel has version $wheel_version." >&2
+          false
+        fi
         gh release upload "$bump" dist/*
