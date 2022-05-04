@@ -15,6 +15,15 @@ This is an experimental Python library to enable
 [POSIX parameter expansion][1] in a string.
 It supports also a subset of [Bash parameter expansion][2].
 
+
+Note that this is a fork from upstream to support proper release on PyPI.
+
+This repo https://github.com/nexB/parameter_expansion_patched is released at
+https://pypi.org/project/parameter-expansion-patched/ on PyPI.
+
+Upstream is less active lately at https://github.com/kojiromike/parameter-expansion/
+
+
 ## Why not spawning a shell directly for this?
 One reason is that it may be security risk. Another reason is to
 support lightweight analysis or evaluation of shell parameters with
