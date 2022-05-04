@@ -6,3 +6,5 @@ dist
 parameter_expansion.egg-info
 /venv/
 /.python-version
+/.pytest_cache/
+/build/
